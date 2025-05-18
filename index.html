@@ -147,32 +147,40 @@
       const engine = new Engine(GODOT_CONFIG);
 
       (function () {
-        const statusOverlay = document.createElement("div");
+        const splash = document.getElementById("status-splash");
+
+        const overlayWrapper = document.createElement("div");
         const statusProgress = document.createElement("progress");
         const statusNotice = document.createElement("div");
 
-        statusOverlay.id = "status";
+        overlayWrapper.id = "status";
         statusProgress.id = "status-progress";
         statusNotice.id = "status-notice";
 
-        statusOverlay.style.position = "absolute";
-        statusOverlay.style.top = "0";
-        statusOverlay.style.left = "0";
-        statusOverlay.style.right = "0";
-        statusOverlay.style.bottom = "0";
-        statusOverlay.style.display = "flex";
-        statusOverlay.style.flexDirection = "column";
-        statusOverlay.style.justifyContent = "center";
-        statusOverlay.style.alignItems = "center";
-        statusOverlay.style.pointerEvents = "none";
-        statusOverlay.style.zIndex = "998"; // Just below splash image
+        // Wrapper to contain splash + progress bar vertically
+        overlayWrapper.style.position = "absolute";
+        overlayWrapper.style.top = "0";
+        overlayWrapper.style.left = "0";
+        overlayWrapper.style.right = "0";
+        overlayWrapper.style.bottom = "0";
+        overlayWrapper.style.display = "flex";
+        overlayWrapper.style.flexDirection = "column";
+        overlayWrapper.style.justifyContent = "center";
+        overlayWrapper.style.alignItems = "center";
+        overlayWrapper.style.zIndex = "1000"; // above everything else
+        overlayWrapper.style.pointerEvents = "none";
 
         statusProgress.style.marginTop = "2rem";
         statusProgress.style.width = "50%";
+        statusProgress.style.zIndex = "1001";
 
-        document.body.appendChild(statusOverlay);
-        statusOverlay.appendChild(statusProgress);
-        statusOverlay.appendChild(statusNotice);
+        // Append the splash image and the progress bar to the wrapper
+        overlayWrapper.appendChild(splash);
+        overlayWrapper.appendChild(statusProgress);
+        overlayWrapper.appendChild(statusNotice);
+
+        // Add everything to the DOM
+        document.body.appendChild(overlayWrapper);
 
         let initializing = true;
         let statusMode = "";
@@ -226,7 +234,8 @@
               },
             })
             .then(() => {
-              document.getElementById("status-splash").style.display = "none";
+              overlayWrapper.remove();
+
               setStatusMode("hidden");
             }, displayFailureNotice);
         }
@@ -234,4 +243,3 @@
     </script>
   </body>
 </html>
-
