@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, orientation=landscape"
+    />
+
+    <title>BioShield</title>
+
+    <style>
+      html,
+      body,
+      #canvas {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+
+      body {
+        background-color: black;
+        color: white;
+        overflow: hidden;
+        touch-action: none;
+      }
+
+      #canvas {
+        display: block;
+      }
+
+      #canvas:focus {
+        outline: none;
+      }
+
+      #fullscreen-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+      }
+
+      #rotate-notice {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        color: white;
+        font-size: 2em;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+
+      @media only screen and (orientation: portrait) {
+        #rotate-notice {
+          display: flex;
+        }
+
+        #canvas,
+        #fullscreen-button {
+          display: none;
+        }
+      }
+    </style>
+
+    <link
+      id="-gd-engine-icon"
+      rel="icon"
+      type="image/png"
+      href="BioShield.icon.png"
+    />
+    <link rel="apple-touch-icon" href="BioShield.apple-touch-icon.png" />
+  </head>
+  <body>
+    <canvas id="canvas">Your browser does not support the canvas tag.</canvas>
+
+    <img
+      id="status-splash"
+      src="BioShield.png"
+      alt="Loading..."
+      style="
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: auto;
+        max-width: 100%;
+        max-height: 100%;
+        image-rendering: pixelated;
+        object-fit: contain;
+        background: black;
+        z-index: 999;
+      "
+    />
+
+    <button id="fullscreen-button">Fullscreen</button>
+    <div id="rotate-notice">Please rotate your device to play the game.</div>
+    <noscript>Your browser does not support JavaScript.</noscript>
+
+    <script src="BioShield.js"></script>
+    <script>
+      const canvas = document.getElementById("canvas");
+
+      // Fullscreen button
+      document
+        .getElementById("fullscreen-button")
+        .addEventListener("click", () => {
+          if (canvas.requestFullscreen) canvas.requestFullscreen();
+          else if (canvas.webkitRequestFullscreen)
+            canvas.webkitRequestFullscreen();
+          else if (canvas.msRequestFullscreen) canvas.msRequestFullscreen();
+        });
+
+      // Auto fullscreen on mobile tap
+      canvas.addEventListener("touchend", () => {
+        if (document.fullscreenElement == null) {
+          canvas.requestFullscreen?.().catch(() => {});
+        }
+      });
+
+      // Godot engine loader
+      const GODOT_CONFIG = {
+        args: [],
+        canvasResizePolicy: 2,
+        ensureCrossOriginIsolationHeaders: true,
+        executable: "BioShield",
+        experimentalVK: false,
+        fileSizes: {
+          "BioShield.pck": 102736432,
+          "BioShield.wasm": 52106500,
+        },
+        focusCanvas: true,
+        gdextensionLibs: [],
+      };
+      const GODOT_THREADS_ENABLED = false;
+      const engine = new Engine(GODOT_CONFIG);
+
+      (function () {
+        const statusOverlay = document.createElement("div");
+        const statusProgress = document.createElement("progress");
+        const statusNotice = document.createElement("div");
+
+        statusOverlay.id = "status";
+        statusProgress.id = "status-progress";
+        statusNotice.id = "status-notice";
+
+        document.body.appendChild(statusOverlay);
+        statusOverlay.appendChild(statusProgress);
+        statusOverlay.appendChild(statusNotice);
+
+        let initializing = true;
+        let statusMode = "";
+
+        function setStatusMode(mode) {
+          if (statusMode === mode || !initializing) return;
+          if (mode === "hidden") {
+            statusOverlay.remove();
+            initializing = false;
+            return;
+          }
+          statusOverlay.style.visibility = "visible";
+          statusProgress.style.display = mode === "progress" ? "block" : "none";
+          statusNotice.style.display = mode === "notice" ? "block" : "none";
+          statusMode = mode;
+        }
+
+        function setStatusNotice(text) {
+          statusNotice.innerText = text;
+        }
+
+        function displayFailureNotice(err) {
+          console.error(err);
+          if (err instanceof Error) setStatusNotice(err.message);
+          else if (typeof err === "string") setStatusNotice(err);
+          else setStatusNotice("An unknown error occurred.");
+          setStatusMode("notice");
+          initializing = false;
+        }
+
+        const missing = Engine.getMissingFeatures({
+          threads: GODOT_THREADS_ENABLED,
+        });
+
+        if (missing.length !== 0) {
+          const missingMsg =
+            "Error\nMissing required features:\n" + missing.join("\n");
+          displayFailureNotice(missingMsg);
+        } else {
+          setStatusMode("progress");
+          engine
+            .startGame({
+              onProgress(current, total) {
+                if (current > 0 && total > 0) {
+                  statusProgress.value = current;
+                  statusProgress.max = total;
+                } else {
+                  statusProgress.removeAttribute("value");
+                  statusProgress.removeAttribute("max");
+                }
+              },
+            })
+            .then(() => {
+              document.getElementById("status-splash").style.display = "none";
+              setStatusMode("hidden");
+            }, displayFailureNotice);
+        }
+      })();
+    </script>
+  </body>
+</html>
+
