@@ -112,6 +112,26 @@
       "
     />
 
+    <input
+      id="ios-text-input"
+      type="text"
+      style="
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        border: none;
+        padding: 0;
+        margin: 0;
+      "
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      spellcheck="false"
+    />
+
     <!-- enter fullscreen -->
     <button id="enter-fs" class="fs-icon" title="Enter fullscreen"></button>
     <!-- exit fullscreen, hidden by default -->
@@ -137,19 +157,45 @@
       const exitBtn = document.getElementById("exit-fs");
 
       function updateButtons() {
-        const isFS = !!document.fullscreenElement;
-        enterBtn.style.display = isFS ? "none" : "block";
-        exitBtn.style.display = isFS ? "block" : "none";
+        const fs = isFullScreen();
+        enterBtn.style.display = fs ? "none" : "block";
+        exitBtn.style.display = fs ? "block" : "none";
       }
+
+      function isFullScreen() {
+        return !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        );
+      }
+      const textInput = document.getElementById("ios-text-input");
+
+      exitBtn.addEventListener("click", () => {
+        // 1) exit fullscreen
+        document.exitFullscreen?.();
+
+        // 2) *immediately* focus the real input
+        //    — if you delay it too long, Safari may ignore it
+        textInput.focus();
+      });
+      textInput.addEventListener("blur", () => {
+        const name = textInput.value;
+        textInput.value = "";
+        // feed `name` into your game...
+      });
 
       enterBtn.addEventListener("click", () => {
         canvas.requestFullscreen?.().catch(() => {});
       });
-      exitBtn.addEventListener("click", () => {
-        document.exitFullscreen?.();
-      });
 
-      document.addEventListener("fullscreenchange", updateButtons);
+      [
+        "fullscreenchange",
+        "webkitfullscreenchange",
+        "mozfullscreenchange",
+        "MSFullscreenChange",
+      ].forEach((evt) => document.addEventListener(evt, updateButtons));
 
       // initialize state
       updateButtons();
@@ -262,4 +308,3 @@
     </script>
   </body>
 </html>
-
