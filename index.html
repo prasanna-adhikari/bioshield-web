@@ -1,221 +1,274 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>BioShield</title>
-		<style>
-html, body, #canvas {
-	margin: 0;
-	padding: 0;
-	border: 0;
-}
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, orientation=landscape"
+    />
 
-body {
-	color: white;
-	background-color: black;
-	overflow: hidden;
-	touch-action: none;
-}
+    <title>BioShield</title>
 
-#canvas {
-	display: block;
-}
+    <style>
+      html,
+      body,
+      #canvas {
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
 
-#canvas:focus {
-	outline: none;
-}
+      body {
+        background-color: black;
+        color: white;
+        overflow: hidden;
+        touch-action: none;
+      }
 
-#status, #status-splash, #status-progress {
-	position: absolute;
-	left: 0;
-	right: 0;
-}
+      #canvas {
+        display: block;
+      }
 
-#status, #status-splash {
-	top: 0;
-	bottom: 0;
-}
+      #canvas:focus {
+        outline: none;
+      }
 
-#status {
-	background-color: #242424;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	visibility: hidden;
-}
+      #fullscreen-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+      }
 
-#status-splash {
-	max-height: 100%;
-	max-width: 100%;
-	margin: auto;
-}
+      #rotate-notice {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
+        color: white;
+        font-size: 2em;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .fs-icon {
+        width: 32px;
+        height: 32px;
+        background: url("icons/fullscreen.svg") no-repeat center;
+        border: none;
+      }
+      .exit-fs-icon {
+        width: 32px;
+        height: 32px;
+        background: url("icons/exit-fullscreen.svg") no-repeat center;
+        border: none;
+      }
 
-#status-splash.show-image--false {
-	display: none;
-}
+      @media only screen and (orientation: portrait) {
+        #rotate-notice {
+          display: flex;
+        }
 
-#status-splash.fullsize--true {
-	height: 100%;
-	width: 100%;
-	object-fit: contain;
-}
+        #canvas,
+        #fullscreen-button {
+          display: none;
+        }
+      }
+    </style>
 
-#status-splash.use-filter--false {
-	image-rendering: pixelated;
-}
+    <link
+      id="-gd-engine-icon"
+      rel="icon"
+      type="image/png"
+      href="BioShield.icon.png"
+    />
+    <link rel="apple-touch-icon" href="BioShield.apple-touch-icon.png" />
+  </head>
+  <body>
+    <canvas id="canvas">Your browser does not support the canvas tag.</canvas>
 
-#status-progress, #status-notice {
-	display: none;
-}
+    <img
+      id="status-splash"
+      src="BioShield.png"
+      alt="Loading..."
+      style="
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin: auto;
+        max-width: 100%;
+        max-height: 100%;
+        image-rendering: pixelated;
+        object-fit: contain;
+        background: black;
+        z-index: 999;
+      "
+    />
 
-#status-progress {
-	bottom: 10%;
-	width: 50%;
-	margin: 0 auto;
-}
+    <!-- enter fullscreen -->
+    <button id="enter-fs" class="fs-icon" title="Enter fullscreen"></button>
+    <!-- exit fullscreen, hidden by default -->
+    <button
+      id="exit-fs"
+      class="exit-fs-icon"
+      title="Exit fullscreen"
+      style="display: none"
+    ></button>
 
-#status-notice {
-	background-color: #5b3943;
-	border-radius: 0.5rem;
-	border: 1px solid #9b3943;
-	color: #e0e0e0;
-	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
-	line-height: 1.3;
-	margin: 0 2rem;
-	overflow: hidden;
-	padding: 1rem;
-	text-align: center;
-	z-index: 1;
-}
-		</style>
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="BioShield.icon.png" />
-<link rel="apple-touch-icon" href="BioShield.apple-touch-icon.png"/>
-<link rel="manifest" href="BioShield.manifest.json">
+    <div id="rotate-notice">
+      <div>
+        Please rotate your device to play the game.<br />
+        If the keyboard doesn't appear, exit fullscreen to enter your name.
+      </div>
+    </div>
+    <noscript>Your browser does not support JavaScript.</noscript>
 
-	</head>
-	<body>
-		<canvas id="canvas">
-			Your browser does not support the canvas tag.
-		</canvas>
+    <script src="BioShield.js"></script>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const enterBtn = document.getElementById("enter-fs");
+      const exitBtn = document.getElementById("exit-fs");
 
-		<noscript>
-			Your browser does not support JavaScript.
-		</noscript>
+      function updateButtons() {
+        const isFS = !!document.fullscreenElement;
+        enterBtn.style.display = isFS ? "none" : "block";
+        exitBtn.style.display = isFS ? "block" : "none";
+      }
 
-		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="BioShield.png" alt="">
-			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
-		</div>
+      enterBtn.addEventListener("click", () => {
+        canvas.requestFullscreen?.().catch(() => {});
+      });
+      exitBtn.addEventListener("click", () => {
+        document.exitFullscreen?.();
+      });
 
-		<script src="BioShield.js"></script>
-		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"ensureCrossOriginIsolationHeaders":true,"executable":"BioShield","experimentalVK":true,"fileSizes":{"BioShield.pck":103076320,"BioShield.wasm":52106500},"focusCanvas":true,"gdextensionLibs":[],"serviceWorker":"BioShield.service.worker.js"};
-const GODOT_THREADS_ENABLED = false;
-const engine = new Engine(GODOT_CONFIG);
+      document.addEventListener("fullscreenchange", updateButtons);
 
-(function () {
-	const statusOverlay = document.getElementById('status');
-	const statusProgress = document.getElementById('status-progress');
-	const statusNotice = document.getElementById('status-notice');
+      // initialize state
+      updateButtons();
 
-	let initializing = true;
-	let statusMode = '';
+      // Fullscreen button
+      document
+        .getElementById("fullscreen-button")
+        .addEventListener("click", () => {
+          if (canvas.requestFullscreen) canvas.requestFullscreen();
+          else if (canvas.webkitRequestFullscreen)
+            canvas.webkitRequestFullscreen();
+          else if (canvas.msRequestFullscreen) canvas.msRequestFullscreen();
+        });
 
-	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) {
-			return;
-		}
-		if (mode === 'hidden') {
-			statusOverlay.remove();
-			initializing = false;
-			return;
-		}
-		statusOverlay.style.visibility = 'visible';
-		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-		statusMode = mode;
-	}
+      // Godot engine loader
+      const GODOT_CONFIG = {
+        args: [],
+        canvasResizePolicy: 2,
+        ensureCrossOriginIsolationHeaders: true,
+        executable: "BioShield",
+        experimentalVK: false,
+        fileSizes: {
+          "BioShield.pck": 102736432,
+          "BioShield.wasm": 52106500,
+        },
+        focusCanvas: true,
+        gdextensionLibs: [],
+      };
+      const GODOT_THREADS_ENABLED = false;
+      const engine = new Engine(GODOT_CONFIG);
 
-	function setStatusNotice(text) {
-		while (statusNotice.lastChild) {
-			statusNotice.removeChild(statusNotice.lastChild);
-		}
-		const lines = text.split('\n');
-		lines.forEach((line) => {
-			statusNotice.appendChild(document.createTextNode(line));
-			statusNotice.appendChild(document.createElement('br'));
-		});
-	}
+      (function () {
+        const statusOverlay = document.createElement("div");
+        const statusProgress = document.createElement("progress");
+        const statusNotice = document.createElement("div");
 
-	function displayFailureNotice(err) {
-		console.error(err);
-		if (err instanceof Error) {
-			setStatusNotice(err.message);
-		} else if (typeof err === 'string') {
-			setStatusNotice(err);
-		} else {
-			setStatusNotice('An unknown error occurred.');
-		}
-		setStatusMode('notice');
-		initializing = false;
-	}
+        statusOverlay.id = "status";
+        statusProgress.id = "status-progress";
+        statusNotice.id = "status-notice";
 
-	const missing = Engine.getMissingFeatures({
-		threads: GODOT_THREADS_ENABLED,
-	});
+        statusOverlay.style.position = "absolute";
+        statusOverlay.style.top = "0";
+        statusOverlay.style.left = "0";
+        statusOverlay.style.right = "0";
+        statusOverlay.style.bottom = "0";
+        statusOverlay.style.display = "flex";
+        statusOverlay.style.flexDirection = "column";
+        statusOverlay.style.justifyContent = "center";
+        statusOverlay.style.alignItems = "center";
+        statusOverlay.style.pointerEvents = "none";
+        statusOverlay.style.zIndex = "1001"; // Just below splash image
 
-	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			let serviceWorkerRegistrationPromise;
-			try {
-				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
-			} catch (err) {
-				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
-			}
-			// There's a chance that installing the service worker would fix the issue
-			Promise.race([
-				serviceWorkerRegistrationPromise.then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
-					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).then(() => {
-				// Reload if there was no error.
-				window.location.reload();
-			}).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			});
-		} else {
-			// Display the message as usual
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-			displayFailureNotice(missingMsg + missing.join('\n'));
-		}
-	} else {
-		setStatusMode('progress');
-		engine.startGame({
-			'onProgress': function (current, total) {
-				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
-				}
-			},
-		}).then(() => {
-			setStatusMode('hidden');
-		}, displayFailureNotice);
-	}
-}());
-		</script>
-	</body>
+        statusProgress.style.position = "absolute";
+        statusProgress.style.bottom = "40px"; // adds bottom padding
+        statusProgress.style.left = "50%";
+        statusProgress.style.transform = "translateX(-50%)";
+        statusProgress.style.width = "60%";
+
+        document.body.appendChild(statusOverlay);
+        statusOverlay.appendChild(statusProgress);
+        statusOverlay.appendChild(statusNotice);
+
+        let initializing = true;
+        let statusMode = "";
+
+        function setStatusMode(mode) {
+          if (statusMode === mode || !initializing) return;
+          if (mode === "hidden") {
+            statusOverlay.remove();
+            initializing = false;
+            return;
+          }
+          statusOverlay.style.visibility = "visible";
+          statusProgress.style.display = mode === "progress" ? "block" : "none";
+          statusNotice.style.display = mode === "notice" ? "block" : "none";
+          statusMode = mode;
+        }
+
+        function setStatusNotice(text) {
+          statusNotice.innerText = text;
+        }
+
+        function displayFailureNotice(err) {
+          console.error(err);
+          if (err instanceof Error) setStatusNotice(err.message);
+          else if (typeof err === "string") setStatusNotice(err);
+          else setStatusNotice("An unknown error occurred.");
+          setStatusMode("notice");
+          initializing = false;
+        }
+
+        const missing = Engine.getMissingFeatures({
+          threads: GODOT_THREADS_ENABLED,
+        });
+
+        if (missing.length !== 0) {
+          const missingMsg =
+            "Error\nMissing required features:\n" + missing.join("\n");
+          displayFailureNotice(missingMsg);
+        } else {
+          setStatusMode("progress");
+          engine
+            .startGame({
+              onProgress(current, total) {
+                if (current > 0 && total > 0) {
+                  statusProgress.value = current;
+                  statusProgress.max = total;
+                } else {
+                  statusProgress.removeAttribute("value");
+                  statusProgress.removeAttribute("max");
+                }
+              },
+            })
+            .then(() => {
+              document.getElementById("status-splash").style.display = "none";
+              setStatusMode("hidden");
+            }, displayFailureNotice);
+        }
+      })();
+    </script>
+  </body>
 </html>
 
