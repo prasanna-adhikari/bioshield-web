@@ -4,7 +4,7 @@
 // Incrementing CACHE_VERSION will kick off the install event and force
 // previously cached resources to be updated from the network.
 /** @type {string} */
-const CACHE_VERSION = '1747654841|31300834174';
+const CACHE_VERSION = '1747658114|34573813812';
 /** @type {string} */
 const CACHE_PREFIX = 'BioShield-sw-cache-';
 const CACHE_NAME = CACHE_PREFIX + CACHE_VERSION;
