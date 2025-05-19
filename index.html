@@ -33,13 +33,6 @@
         outline: none;
       }
 
-      #fullscreen-button {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-      }
-
       #rotate-notice {
         display: none;
         position: fixed;
@@ -70,27 +63,20 @@
         border: none;
         cursor: pointer;
       }
+
+      /* enter */
       .fs-icon {
-        width: 32px;
-        height: 32px;
-        background: url("icons/fullscreen.svg") no-repeat center;
-        border: none;
+        background-image: url("./icons/fullscreen.svg");
       }
+
+      /* exit */
       .exit-fs-icon {
-        width: 32px;
-        height: 32px;
-        background: url("icons/exit-fullscreen.svg") no-repeat center;
-        border: none;
+        background-image: url("./icons/exit-fullscreen.svg");
       }
 
       @media only screen and (orientation: portrait) {
         #rotate-notice {
           display: flex;
-        }
-
-        #canvas,
-        #fullscreen-button {
-          display: none;
         }
       }
     </style>
