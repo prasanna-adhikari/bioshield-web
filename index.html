@@ -25,7 +25,6 @@
         width: 100vw;
         height: 100vh;
       }
-
       body {
         color: white;
         background-color: black;
@@ -108,7 +107,6 @@
         text-align: center;
         z-index: 1;
       }
-
       #rotate-notice {
         display: none;
         position: fixed;
@@ -163,14 +161,10 @@
       href="BioShield.icon.png"
     />
     <link rel="apple-touch-icon" href="BioShield.apple-touch-icon.png" />
-    <link rel="manifest" href="BioShield.manifest.json" />
   </head>
   <body>
-    <canvas id="canvas" tabindex="0"
-      >Your browser does not support the canvas tag.</canvas
-    >
+    <canvas id="canvas"> Your browser does not support the canvas tag. </canvas>
 
-    <!-- enter fullscreen -->
     <button id="enter-fs" class="fs-icon" title="Enter fullscreen"></button>
     <!-- exit fullscreen, hidden by default -->
     <button
@@ -228,10 +222,9 @@
         ensureCrossOriginIsolationHeaders: true,
         executable: "BioShield",
         experimentalVK: true,
-        fileSizes: { "BioShield.pck": 103080272, "BioShield.wasm": 52106500 },
+        fileSizes: { "BioShield.pck": 78364944, "BioShield.wasm": 52106500 },
         focusCanvas: true,
         gdextensionLibs: [],
-        serviceWorker: "BioShield.service.worker.js",
       };
       const GODOT_THREADS_ENABLED = false;
       const engine = new Engine(GODOT_CONFIG);
@@ -243,7 +236,25 @@
 
         let initializing = true;
         let statusMode = "";
+        function enterFullscreen() {
+          const canvas = document.getElementById("canvas");
+          canvas.focus(); // Important for mobile browsers
 
+          if (canvas.requestFullscreen) {
+            canvas.requestFullscreen().catch(() => {});
+          } else if (canvas.webkitRequestFullscreen) {
+            canvas.webkitRequestFullscreen();
+          } else if (canvas.msRequestFullscreen) {
+            canvas.msRequestFullscreen();
+          }
+
+          // Optional: Try locking to landscape
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock("landscape").catch(() => {});
+          }
+        }
+
+        enterBtn.addEventListener("click", enterFullscreen);
         function setStatusMode(mode) {
           if (statusMode === mode || !initializing) {
             return;
@@ -282,25 +293,6 @@
           setStatusMode("notice");
           initializing = false;
         }
-        function enterFullscreen() {
-          const canvas = document.getElementById("canvas");
-          canvas.focus(); // Important for mobile browsers
-
-          if (canvas.requestFullscreen) {
-            canvas.requestFullscreen().catch(() => {});
-          } else if (canvas.webkitRequestFullscreen) {
-            canvas.webkitRequestFullscreen();
-          } else if (canvas.msRequestFullscreen) {
-            canvas.msRequestFullscreen();
-          }
-
-          // Optional: Try locking to landscape
-          if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock("landscape").catch(() => {});
-          }
-        }
-
-        enterBtn.addEventListener("click", enterFullscreen);
 
         const missing = Engine.getMissingFeatures({
           threads: GODOT_THREADS_ENABLED,
@@ -370,7 +362,6 @@
             }, displayFailureNotice);
         }
       })();
-
       enterBtn.addEventListener("click", () => {
         canvas.focus(); // Ensure it's focusable first
         canvas.requestFullscreen?.().catch(() => {});
